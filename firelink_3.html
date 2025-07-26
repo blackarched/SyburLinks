@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Cyber Link - Arcade Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        /* --- Basic Setup & Backgrounds --- */
+        html {
+            height: 100%;
+            margin-bottom: 1px;
+        }
+
+        body {
+            background: #1a1a2e; /* Deep space blue */
+            padding: 10px;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .stage {
+            perspective: 2000px;
+            perspective-origin: 50% 50%;
+        }
+
+        /* --- Arcade Machine Structure (Cyberpunk Reskin) --- */
+        .arcademachinewrap {
+            transform-style: preserve-3d;
+            transform: rotateX(-15deg) rotateY(0deg);
+            transition: transform 1s;
+        }
+
+        .arcademachinewrap:hover {
+            transform: rotateX(-5deg) rotateY(0deg) scale(1.05);
+        }
+        
+        .arcademachine {
+            position: relative;
+            width: 480px;
+            height: 650px;
+            transform-style: preserve-3d;
+            transform: translateZ(-30px);
+        }
+
+        .box {
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .side {
+            position: absolute;
+            background-color: #111;
+            border: 2px solid #00ffff; /* Neon cyan border */
+            box-shadow: 0 0 15px #00ffff inset, 0 0 10px #00ffff;
+        }
+
+        /* Cabinet Panels */
+        .box.main { width: 480px; height: 500px; top: 150px; }
+        .mainleft, .mainright { width: 120px; height: 500px; }
+        .mainleft { transform: rotateY(-90deg) translateZ(60px); }
+        .mainright { transform: rotateY(90deg) translateZ(420px); }
+        .mainback { width: 480px; height: 500px; transform: translateZ(-60px); }
+        .mainbottom { width: 480px; height: 120px; top: 500px; transform: rotateX(90deg) translateZ(60px); }
+
+        /* Marquee/Cap */
+        .box.cap { width: 480px; height: 150px; }
+        .capleft, .capright { width: 120px; height: 150px; }
+        .capleft { transform: rotateY(-90deg) translateZ(60px); }
+        .capright { transform: rotateY(90deg) translateZ(420px); }
+        .capfront { width: 480px; height: 150px; transform: translateZ(60px); display: flex; justify-content: center; align-items: center; background: #000; }
+        .captop { width: 480px; height: 120px; transform: rotateX(90deg) translateZ(75px); }
+
+        .logo {
+            font-size: 38px;
+            font-weight: 900;
+            color: #ff00ff; /* Neon magenta */
+            text-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 30px #ff00ff, 0 0 50px #ff00ff;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        /* Control Panel */
+        .box.panel { width: 480px; height: 120px; top: 380px; transform: rotateX(40deg) translateZ(-40px); }
+        .panelfront { width: 480px; height: 80px; transform: translateZ(60px) rotateX(-90deg); background: #222; }
+        
+        .control-panel-top {
+            position: absolute;
+            width: 480px;
+            height: 120px;
+            background: #1a1a1a;
+            transform: translateZ(60px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .button-group { display: flex; flex-direction: column; align-items: center; }
+        .button-label { color: #00ffff; font-size: 12px; margin-bottom: 5px; text-shadow: 0 0 3px #00ffff; }
+
+        .button {
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border-radius: 50%;
+            border: 2px solid #ff00ff;
+            cursor: pointer;
+            box-shadow: 0 0 8px #ff00ff, 0 0 10px #ff00ff inset;
+            transition: all 0.1s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .button.spin {
+            width: 80px;
+            height: 80px;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00, 0 0 15px #00ff00 inset;
+            color: #00ff00;
+            font-size: 24px;
+        }
+        .button:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 3px #ff00ff, 0 0 5px #ff00ff inset;
+        }
+        .button.spin:active {
+            box-shadow: 0 0 5px #00ff00, 0 0 8px #00ff00 inset;
+        }
+        .button-disabled {
+            cursor: not-allowed;
+            background: #222 !important;
+            color: #555 !important;
+            border-color: #555 !important;
+            box-shadow: none !important;
+        }
+
+        /* --- Game Screen & Elements --- */
+        .screen {
+            position: absolute;
+            width: 440px;
+            height: 480px;
+            top: -120px;
+            left: 20px;
+            background: #000;
+            border: 5px solid #222;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8) inset;
+            transform: translateZ(58px) rotateX(-15deg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Starfield Background */
+        .starfield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s infinite alternate; }
+        @keyframes twinkle { 0% { opacity: 0.2; } 100% { opacity: 1; transform: scale(1.1); } }
+
+        /* Jackpot Display */
+        .jackpot-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            padding: 5px 10px;
+            background: rgba(17, 17, 17, 0.5);
+            z-index: 10;
+        }
+        .jackpot-box { text-align: center; padding: 2px; }
+        .jackpot-box .name { font-size: 14px; font-weight: bold; }
+        .jackpot-box .value { font-size: 16px; font-weight: 900; }
+        .jackpot-box.grand .name { color: #ff00ff; text-shadow: 0 0 8px #ff00ff; }
+        .jackpot-box.grand .value { color: #ff00ff; text-shadow: 0 0 8px #ff00ff; }
+        .jackpot-box.major .name { color: #ff33cc; }
+        .jackpot-box.major .value { color: #ff33cc; }
+        .jackpot-box.minor .name { color: #00ffff; }
+        .jackpot-box.minor .value { color: #00ffff; }
+        .jackpot-box.mini .name { color: #33ff33; }
+        .jackpot-box.mini .value { color: #33ff33; }
+
+        /* Reel Area */
+        #reel-container {
+            position: relative;
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            padding: 10px 0;
+            perspective: 800px;
+        }
+        #reel-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 80px);
+            grid-template-rows: repeat(4, 80px);
+            gap: 5px;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease-in-out;
+        }
+        .reel-cell {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(20, 20, 40, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s, box-shadow 0.3s;
+        }
+        .symbol-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.3s ease-out;
+        }
+        .reel-cell.spinning .symbol-container {
+            animation: blur-spin 0.1s linear infinite;
+        }
+        @keyframes blur-spin {
+            0% { transform: translateY(-50px); filter: blur(3px); }
+            100% { transform: translateY(50px); filter: blur(3px); }
+        }
+        .symbol {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            font-weight: 900;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Symbol Styling */
+        .symbol-A { color: #ff4d4d; text-shadow: 0 0 5px #ff4d4d; }
+        .symbol-K { color: #4da6ff; text-shadow: 0 0 5px #4da6ff; }
+        .symbol-Q { color: #ffc24d; text-shadow: 0 0 5px #ffc24d; }
+        .symbol-J { color: #a64dff; text-shadow: 0 0 5px #a64dff; }
+        .symbol-10 { color: #4dff88; text-shadow: 0 0 5px #4dff88; }
+        .symbol-Bell { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ffff00" d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29V4A2,2 0 0,1 12,2A2,2 0 0,1 14,4V4.29C16.97,5.17 19,7.9 19,11V17L21,19M12,22A3,3 0 0,1 9,19H15A3,3 0 0,1 12,22Z" /></svg>'); filter: drop-shadow(0 0 5px #ffff00); }
+        .symbol-Cherry { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ff0033" d="M19.1,12.4C19.1,12.4 19.1,12.4 19.1,12.4C21.3,12.9 22.9,14.8 22.9,17.1C22.9,19.5 21,21.4 18.6,21.4C16.2,21.4 14.3,19.5 14.3,17.1C14.3,16.4 14.5,15.7 14.8,15.1L16.4,12.2L11.5,11.3L12.2,10L17.1,10.9L15,7.3L16.2,6.6L18.7,11C18.9,11.4 19.1,11.9 19.1,12.4M7,12.5C7.3,11.8 7.5,11.1 7.5,10.3C7.5,7.9 5.6,6 3.2,6C0.8,6 -1.1,7.9 -1.1,10.3C-1.1,12.6 0.5,14.5 2.7,15C2.7,15 2.7,15 2.7,15C2.8,14.5 3,14.1 3.3,13.6L5.8,9.2L7,9.9L4.8,13.2L11.7,2.8L12.9,3.5L7,12.5Z" /></svg>'); filter: drop-shadow(0 0 5px #ff0033); }
+        .symbol-Seven { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ff8000" d="M10,4V6H18V8L12,18H10L16,8H10V10H8V4H10Z" /></svg>'); filter: drop-shadow(0 0 5px #ff8000); }
+
+        .symbol-Fireball {
+            background: radial-gradient(circle, #ffd700, #ff8c00, #ff4500, #8b0000);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, 0 0 5px #ff4500 inset;
+            animation: fireball-pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes fireball-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, 0 0 5px #ff4500 inset; }
+            50% { transform: scale(1.05); box-shadow: 0 0 15px #ff8c00, 0 0 30px #ffd700, 0 0 8px #ff8c00 inset; }
+            100% { transform: scale(1); box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, 0 0 5px #ff4500 inset; }
+        }
+
+        /* Fire Link Feature styling */
+        .fire-link-active .reel-cell:not(.locked) { opacity: 0.3; }
+        .reel-cell.locked {
+             box-shadow: 0 0 15px #ffd700, 0 0 30px #ff8c00;
+             border-color: #ffd700;
+        }
+        #reel-grid.rows-5 { grid-template-rows: repeat(5, 64px); }
+        #reel-grid.rows-6 { grid-template-rows: repeat(6, 53px); }
+        #reel-grid.rows-5 .reel-cell { height: 64px; }
+        #reel-grid.rows-6 .reel-cell { height: 53px; }
+
+        /* UI Bar */
+        .ui-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 15px;
+            background: rgba(17, 17, 17, 0.8);
+            z-index: 10;
+        }
+        .ui-box { text-align: center; }
+        .ui-box .label { font-size: 12px; color: #aaa; }
+        .ui-box .value { font-size: 20px; color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
+        .ui-box .win-value { color: #ffff00; text-shadow: 0 0 8px #ffff00; }
+
+        /* Message Overlay */
+        #message-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Changed to none */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+            flex-direction: column;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #message-overlay.show { display: flex; opacity: 1; } /* Show class */
+        .message-title {
+            font-size: 60px;
+            font-weight: 900;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+            animation: flicker 1.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                text-shadow: 0 0 4px #fff, 0 0 11px #ff00ff, 0 0 19px #ff00ff, 0 0 40px #ff00ff, 0 0 80px #ff00ff, 0 0 90px #ff00ff, 0 0 100px #ff00ff, 0 0 150px #ff00ff;
+            }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+        .message-subtitle {
+            font-size: 30px;
+            color: #00ffff;
+            text-shadow: 0 0 8px #00ffff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <div class="arcademachinewrap">
+            <div class="arcademachine">
+                <div class="box main">
+                    <div class="side mainleft"></div>
+                    <div class="side mainright"></div>
+                    <div class="side mainback"></div>
+                </div>
+                <div class="box cap">
+                    <div class="side capleft"></div>
+                    <div class="side capright"></div>
+                    <div class="side capfront">
+                        <div class="logo">CYBER<br />LINK</div>
+                    </div>
+                    <div class="side captop"></div>
+                </div>
+                <div class="box panel">
+                     <div class="control-panel-top">
+                        <div class="button-group">
+                            <div class="button-label">BET</div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="button" id="bet-down-btn">-</button>
+                                <button class="button" id="bet-up-btn">+</button>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                             <div class="button-label">SPIN</div>
+                             <button class="button spin" id="spin-btn">SPIN</button>
+                        </div>
+                        <div class="button-group">
+                            <div class="button-label">INFO</div>
+                             <button class="button" id="info-btn">i</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen">
+                    <div class="starfield"></div>
+                    <div class="jackpot-display">
+                        <div class="jackpot-box grand">
+                            <div class="name">GRAND</div>
+                            <div class="value" id="grand-jackpot">$10,000.00</div>
+                        </div>
+                        <div class="jackpot-box major">
+                            <div class="name">MAJOR</div>
+                            <div class="value" id="major-jackpot">$500.00</div>
+                        </div>
+                        <div class="jackpot-box minor">
+                            <div class="name">MINOR</div>
+                            <div class="value" id="minor-jackpot">$75.00</div>
+                        </div>
+                        <div class="jackpot-box mini">
+                            <div class="name">MINI</div>
+                            <div class="value" id="mini-jackpot">$20.00</div>
+                        </div>
+                    </div>
+
+                    <div id="reel-container">
+                        <div id="reel-grid">
+                           </div>
+                    </div>
+
+                    <div class="ui-bar">
+                        <div class="ui-box">
+                            <div class="label">BALANCE</div>
+                            <div class="value" id="balance-display">$100.00</div>
+                        </div>
+                         <div class="ui-box">
+                            <div class="label">TOTAL WIN</div>
+                            <div class="value win-value" id="win-display">$0.00</div>
+                        </div>
+                        <div class="ui-box">
+                            <div class="label">BET</div>
+                            <div class="value" id="bet-display">$1.00</div>
+                        </div>
+                    </div>
+
+                    <div id="message-overlay">
+                        <div id="message-title" class="message-title"></div>
+                        <div id="message-subtitle" class="message-subtitle"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DOM Elements ---
+    const balanceDisplay = document.getElementById('balance-display');
+    const betDisplay = document.getElementById('bet-display');
+    const winDisplay = document.getElementById('win-display');
+    const spinBtn = document.getElementById('spin-btn');
+    const betUpBtn = document.getElementById('bet-up-btn');
+    const betDownBtn = document.getElementById('bet-down-btn');
+    const reelGrid = document.getElementById('reel-grid');
+    const messageOverlay = document.getElementById('message-overlay');
+    const messageTitle = document.getElementById('message-title');
+    const messageSubtitle = document.getElementById('message-subtitle');
+    const jackpotDisplays = {
+        grand: document.getElementById('grand-jackpot'),
+        major: document.getElementById('major-jackpot'),
+        minor: document.getElementById('minor-jackpot'),
+        mini: document.getElementById('mini-jackpot'),
+    };
+    
+    // --- Game Configuration ---
+    const config = {
+        rows: 4,
+        cols: 5,
+        betLevels: [0.50, 1.00, 2.00, 2.50, 5.00, 10.00],
+        symbols: {
+            '10': { payout: [0, 0, 5, 10, 25], class: 'symbol-10' },
+            'J': { payout: [0, 0, 5, 10, 25], class: 'symbol-J' },
+            'Q': { payout: [0, 0, 5, 15, 40], class: 'symbol-Q' },
+            'K': { payout: [0, 0, 5, 15, 40], class: 'symbol-K' },
+            'A': { payout: [0, 0, 10, 20, 50], class: 'symbol-A' },
+            'Cherry': { payout: [0, 0, 15, 40, 75], class: 'symbol-Cherry' },
+            'Bell': { payout: [0, 0, 20, 50, 100], class: 'symbol-Bell' },
+            'Seven': { payout: [0, 0, 25, 75, 150], class: 'symbol-Seven' },
+            'Fireball': { class: 'symbol-Fireball' }
+        },
+        reelStrips: [
+            ['A','K','Q','J','10','Cherry','Bell','Seven','A','K','Q','Fireball','J','10','Cherry','Bell','A','K','Fireball'],
+            ['Seven','Bell','Cherry','10','J','Q','K','A','Fireball','Seven','Bell','Cherry','10','J','Q','K','A','Fireball'],
+            ['A','K','Q','J','10','Cherry','Bell','Seven','A','K','Q','Fireball','J','10','Cherry','Bell','A','K','Fireball'],
+            ['Seven','Bell','Cherry','10','J','Q','K','A','Fireball','Seven','Bell','Cherry','10','J','Q','K','A','Fireball'],
+            ['A','K','Q','J','10','Cherry','Bell','Seven','A','K','Q','Fireball','J','10','Cherry','Bell','A','K','Fireball','Fireball']
+        ],
+        paylines: [
+            [5, 6, 7, 8, 9],    // Top row
+            [10, 11, 12, 13, 14], // Middle row
+            [15, 16, 17, 18, 19], // Bottom row
+            [0,1,2,3,4], // another row for 4 row grid
+            [5, 11, 17, 13, 9], // V shape
+            [15, 11, 7, 13, 19], // Inverted V
+            [0, 6, 12, 8, 4], // other paylines
+            [20, 16, 12, 8, 4],
+            [0, 1, 2, 8, 14],
+            [20, 19, 18, 12, 6],
+        ],
+        fireLink: {
+            triggerCount: 4,
+            initialSpins: 3,
+            rowUnlockCounts: [8, 15], // Unlock row 5 at 8, row 6 at 15
+            creditValues: [100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 5000], // Multiplied by bet multiplier
+            jackpotProbabilities: { mini: 0.15, minor: 0.08, major: 0.02 } // Grand is via full screen
+        }
+    };
+
+    // --- Game State ---
+    let state = {
+        balance: 100.00,
+        currentBetIndex: 1,
+        reels: [],
+        spinning: false,
+        inFireLink: false,
+        fireLinkSpins: 0,
+        fireballsLanded: 0,
+        totalRows: config.rows
+    };
+    
+    // --- Initialization ---
+    function init() {
+        createStarfield();
+        setupReels();
+        updateDisplays();
+        bindEvents();
+    }
+
+    function createStarfield() {
+        const starfield = document.querySelector('.starfield');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = `${Math.random() * 2 + 1}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDelay = `${Math.random() * 3}s`;
+            starfield.appendChild(star);
+        }
+    }
+
+    function setupReels() {
+        reelGrid.innerHTML = '';
+        state.reels = [];
+        const cellCount = state.totalRows * config.cols;
+        reelGrid.style.gridTemplateRows = `repeat(${state.totalRows}, 1fr)`;
+
+        for (let i = 0; i < cellCount; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('reel-cell');
+            cell.dataset.index = i;
+            
+            const symbolContainer = document.createElement('div');
+            symbolContainer.classList.add('symbol-container');
+            
+            const symbol = document.createElement('div');
+            symbol.classList.add('symbol');
+            
+            symbolContainer.appendChild(symbol);
+            cell.appendChild(symbolContainer);
+            reelGrid.appendChild(cell);
+            
+            state.reels.push({ cell, symbol, symbolContainer });
+        }
+    }
+
+    // --- UI & Display Functions ---
+    function updateDisplays() {
+        balanceDisplay.textContent = `$${state.balance.toFixed(2)}`;
+        const currentBet = config.betLevels[state.currentBetIndex];
+        betDisplay.textContent = `$${currentBet.toFixed(2)}`;
+        
+        // Update jackpot values based on bet
+        const betMultiplier = currentBet / config.betLevels[0]; // Base bet is 0.50
+        jackpotDisplays.mini.textContent = `$${(20.00 * betMultiplier).toFixed(2)}`;
+        jackpotDisplays.minor.textContent = `$${(75.00 * betMultiplier).toFixed(2)}`;
+        jackpotDisplays.major.textContent = `$${(500.00 * betMultiplier).toFixed(2)}`;
+        jackpotDisplays.grand.textContent = `$${(10000.00 * betMultiplier).toFixed(2)}`;
+    }
+    
+    function toggleControls(enabled) {
+        spinBtn.classList.toggle('button-disabled', !enabled);
+        betUpBtn.classList.toggle('button-disabled', !enabled);
+        betDownBtn.classList.toggle('button-disabled', !enabled);
+        state.spinning = !enabled;
+    }
+
+    function showMessage(title, subtitle, duration = 3000) {
+        messageTitle.innerHTML = title;
+        messageSubtitle.innerHTML = subtitle;
+        messageOverlay.classList.add('show');
+        
+        if (duration > 0) {
+            setTimeout(() => {
+                messageOverlay.classList.remove('show');
+            }, duration);
+        }
+    }
+
+    // --- Event Handlers ---
+    function bindEvents() {
+        spinBtn.addEventListener('click', handleSpin);
+        betUpBtn.addEventListener('click', () => changeBet(1));
+        betDownBtn.addEventListener('click', () => changeBet(-1));
+    }
+    
+    function changeBet(direction) {
+        if (state.spinning) return;
+        state.currentBetIndex += direction;
+        if (state.currentBetIndex < 0) state.currentBetIndex = 0;
+        if (state.currentBetIndex >= config.betLevels.length) state.currentBetIndex = config.betLevels.length - 1;
+        updateDisplays();
+    }
+    
+    // --- Game Logic ---
+    async function handleSpin() {
+        if (state.spinning) return;
+
+        const betAmount = config.betLevels[state.currentBetIndex];
+        if (state.balance < betAmount) {
+            showMessage("INSUFFICIENT FUNDS", `Please add more credits.`, 2000);
+            return;
+        }
+
+        toggleControls(false);
+        state.balance -= betAmount;
+        winDisplay.textContent = "$0.00";
+        updateDisplays();
+        
+        // Start spin animation
+        state.reels.forEach(reel => reel.cell.classList.add('spinning'));
+
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 500));
+
+        // Stop spinning and reveal symbols
+        const newGrid = [];
+        state.reels.forEach((reel, i) => {
+            reel.cell.classList.remove('spinning');
+            const col = i % config.cols;
+            const strip = config.reelStrips[col];
+            const symbolKey = strip[Math.floor(Math.random() * strip.length)];
+            newGrid[i] = symbolKey;
+            setSymbol(reel, symbolKey);
+        });
+
+        const winData = checkWin(newGrid);
+        
+        if (winData.totalWin > 0) {
+            state.balance += winData.totalWin;
+            winDisplay.textContent = `$${winData.totalWin.toFixed(2)}`;
+            showMessage("YOU WIN!", `$${winData.totalWin.toFixed(2)}`, 2000);
+            updateDisplays();
+        }
+
+        const fireballCount = newGrid.filter(s => s === 'Fireball').length;
+        if (fireballCount >= config.fireLink.triggerCount) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Pause before feature starts
+            startFireLink(newGrid);
+        } else {
+            toggleControls(true);
+        }
+    }
+
+    function setSymbol(reel, symbolKey) {
+        const symbolConfig = config.symbols[symbolKey];
+        reel.symbol.className = `symbol ${symbolConfig.class}`;
+        reel.symbol.textContent = '';
+        reel.symbol.style.backgroundImage = '';
+
+        if (symbolKey.length <= 2) { // Is a card symbol
+            reel.symbol.textContent = symbolKey;
+        } else if (symbolKey === 'Fireball') {
+            const betMultiplier = config.betLevels[state.currentBetIndex] / config.betLevels[0];
+            const value = config.fireLink.creditValues[Math.floor(Math.random() * config.fireLink.creditValues.length)] * betMultiplier / 100;
+            const rand = Math.random();
+            let text = `$${value.toFixed(2)}`;
+            let jackpot = null;
+            if (rand < config.fireLink.jackpotProbabilities.major) {
+                text = 'MAJOR';
+                jackpot = 'major';
+            } else if (rand < config.fireLink.jackpotProbabilities.minor) {
+                text = 'MINOR';
+                jackpot = 'minor';
+            } else if (rand < config.fireLink.jackpotProbabilities.mini) {
+                text = 'MINI';
+                jackpot = 'mini';
+            }
+            reel.symbol.textContent = text;
+            reel.symbol.dataset.value = jackpot ? jackpot : value;
+        }
+    }
+    
+    function checkWin(grid) {
+        let totalWin = 0;
+        const betMultiplier = config.betLevels[state.currentBetIndex] / 50; // Payouts are based on 50 credit bet
+
+        config.paylines.forEach(line => {
+            const firstSymbolKey = grid[line[0]];
+            if (firstSymbolKey === 'Fireball') return;
+            
+            let matchCount = 1;
+            for (let i = 1; i < line.length; i++) {
+                if (grid[line[i]] === firstSymbolKey) {
+                    matchCount++;
+                } else {
+                    break;
+                }
+            }
+
+            if (matchCount >= 3) {
+                const payout = config.symbols[firstSymbolKey].payout[matchCount - 1];
+                totalWin += payout * betMultiplier;
+            }
+        });
+        
+        return { totalWin };
+    }
+
+    // --- Fire Link Feature ---
+    async function startFireLink(grid) {
+        state.inFireLink = true;
+        showMessage("FIRE LINK", `FEATURE TRIGGERED`, 2500);
+        reelGrid.classList.add('fire-link-active');
+
+        // Lock initial fireballs
+        state.fireballsLanded = 0;
+        grid.forEach((symbolKey, i) => {
+            if (symbolKey === 'Fireball') {
+                state.reels[i].cell.classList.add('locked');
+                state.fireballsLanded++;
+            } else {
+                state.reels[i].symbol.className = 'symbol'; // Clear non-fireball symbols
+            }
+        });
+
+        state.fireLinkSpins = config.fireLink.initialSpins;
+        await fireLinkSpin();
+    }
+
+    async function fireLinkSpin() {
+        if (state.fireLinkSpins <= 0) {
+            endFireLink();
+            return;
+        }
+        
+        showMessage(`SPIN ${state.fireLinkSpins}`, ``, 1000);
+        state.fireLinkSpins--;
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        let newFireballLanded = false;
+        const promises = [];
+
+        state.reels.forEach((reel, i) => {
+            if (!reel.cell.classList.contains('locked')) {
+                const p = new Promise(async resolveSpin => {
+                    reel.cell.classList.add('spinning');
+                    await new Promise(r => setTimeout(r, 500 + Math.random() * 500));
+                    reel.cell.classList.remove('spinning');
+
+                    // Increased chance to land fireball in feature
+                    const landFireball = Math.random() < 0.25;
+                    if (landFireball) {
+                        setSymbol(reel, 'Fireball');
+                        reel.cell.classList.add('locked');
+                        state.fireballsLanded++;
+                        newFireballLanded = true;
+                    }
+                    resolveSpin();
+                });
+                promises.push(p);
+            }
+        });
+        
+        await Promise.all(promises);
+
+        // Check for row unlock
+        if (state.totalRows < 6 && state.fireballsLanded >= config.fireLink.rowUnlockCounts[1]) {
+            unlockRow(6);
+        } else if (state.totalRows < 5 && state.fireballsLanded >= config.fireLink.rowUnlockCounts[0]) {
+            unlockRow(5);
+        }
+
+        if (newFireballLanded) {
+            state.fireLinkSpins = config.fireLink.initialSpins;
+        }
+        
+        // Check for full screen
+        if (state.reels.every(r => r.cell.classList.contains('locked'))) {
+            endFireLink(true);
+            return;
+        }
+
+        setTimeout(fireLinkSpin, 500);
+    }
+    
+    function unlockRow(targetRows) {
+        if (state.totalRows >= targetRows) return;
+        
+        showMessage(`ROW ${targetRows} UNLOCKED!`, ``, 2000);
+        state.totalRows = targetRows;
+        reelGrid.classList.add(`rows-${targetRows}`);
+        
+        const currentCells = state.reels.length;
+        const newCells = (targetRows * config.cols) - currentCells;
+        
+        for (let i = 0; i < newCells; i++) {
+             const cell = document.createElement('div');
+            cell.classList.add('reel-cell');
+            cell.dataset.index = currentCells + i;
+            
+            const symbolContainer = document.createElement('div');
+            symbolContainer.classList.add('symbol-container');
+            
+            const symbol = document.createElement('div');
+            symbol.classList.add('symbol');
+            
+            symbolContainer.appendChild(symbol);
+            cell.appendChild(symbolContainer);
+            reelGrid.appendChild(cell);
+            
+            state.reels.push({ cell, symbol, symbolContainer });
+        }
+    }
+    
+    function endFireLink(grandPrize = false) {
+        let totalWin = 0;
+        const betMultiplier = config.betLevels[state.currentBetIndex] / config.betLevels[0];
+
+        if (grandPrize) {
+            const grandValue = 10000.00 * betMultiplier;
+            totalWin = grandValue;
+            showMessage("GRAND JACKPOT!", `$${grandValue.toFixed(2)}`, 5000);
+        } else {
+            state.reels.forEach(reel => {
+                if (reel.cell.classList.contains('locked')) {
+                    const value = reel.symbol.dataset.value;
+                    if (isNaN(value)) { // It's a jackpot name
+                        totalWin += parseFloat(jackpotDisplays[value].textContent.replace('$', ''));
+                    } else {
+                        totalWin += parseFloat(value);
+                    }
+                }
+            });
+            showMessage("FEATURE COMPLETE", `YOU WON $${totalWin.toFixed(2)}`, 5000);
+        }
+
+        state.balance += totalWin;
+        winDisplay.textContent = `$${totalWin.toFixed(2)}`;
+        
+        setTimeout(() => {
+            state.inFireLink = false;
+            state.totalRows = config.rows;
+            reelGrid.className = '';
+            setupReels();
+            updateDisplays();
+            toggleControls(true);
+            messageOverlay.classList.remove('show');
+        }, 5000);
+    }
+
+    // --- Start the game ---
+    init();
+});
+</script>
+
+</body>
+</html>
