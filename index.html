@@ -55,13 +55,22 @@
       <div id="reel3" class="reel">?</div>
     </div>
     <div class="controls">
-      <button id="spin-button">Spin</button>
+      <button id="spin-button" aria-label="Spin the reels">Spin</button>
+      <div class="credits">
+        <span>Credits:</span>
+        <span id="credits">100</span>
+      </div>
+      <div class="bet">
+        <span>Bet:</span>
+        <input type="number" id="bet-amount" value="1" min="1" max="10">
+      </div>
     </div>
     <div id="results"></div>
   </div>
   <script src="src/rng.js"></script>
   <script src="src/game.js"></script>
   <script src="src/reel.js"></script>
+  <script src="src/audio.js"></script>
   <script src="src/main.js"></script>
 </body>
 </html>

@@ -1,9 +1,20 @@
+/**
+ * A simple, non-cryptographic random number generator.
+ */
 class CryptographicRNG {
-  // A simple, non-cryptographic RNG for demonstration purposes.
+  /**
+   * Generates a random float between 0 (inclusive) and 1 (exclusive).
+   * @returns {number} A random float.
+   */
   generateFloat() {
     return Math.random();
   }
 
+  /**
+   * Selects an index from a weighted array.
+   * @param {number[]} weights - An array of weights.
+   * @returns {number} The selected index.
+   */
   selectSymbol(weights) {
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
     const random = this.generateFloat() * totalWeight;
